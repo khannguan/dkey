@@ -3041,21 +3041,24 @@ function qrSvg(text) {
 function renderShare() {
   const base = location.href.split("#")[0];
   const link = base + "#student";
+  const link2 = base + "#" + studentCode();
   const local = !/^https?:/.test(base) || /claude|usercontent|sandbox/.test(location.hostname);
+  const customs = selected.filter(o => o.custom), n2 = selected.length - customs.length;
   $("keyCard").innerHTML = `
-    <h2>QR code สำหรับนักเรียน</h2>
-    <p class="meta" style="margin-top:0">QR นี้ใช้ได้ตลอด ไม่ต้องเปลี่ยน นักเรียนสแกนแล้วเลือกชุดสิ่งมีชีวิตเองในมือถือ จากนั้นเลือก "จำแนกเอง" หรือ "แบบทดสอบ" และจะไม่เห็นคีย์เฉลย</p>
-    ${local ? `<div class="warn">ตอนนี้แอปยังไม่ได้อยู่บนเว็บ QR นี้จึงยังสแกนใช้ไม่ได้ ต้องเอาไฟล์ขึ้นเว็บ (เช่น GitHub Pages) แล้วเปิดจากลิงก์เว็บก่อน</div>` : ""}
+    ${local ? `<div class="warn" style="margin-top:0">ตอนนี้แอปยังไม่ได้อยู่บนเว็บ QR จึงยังสแกนใช้ไม่ได้ ให้เปิดจากลิงก์เว็บ (GitHub Pages) ก่อน</div>` : ""}
+    <h2 style="margin-top:12px">แบบที่ 1: QR หลัก (ใช้ได้ตลอด)</h2>
+    <p class="meta" style="margin-top:0">นักเรียนสแกนแล้วเลือกชุดสำเร็จรูป 1–7 เองในมือถือ QR นี้ไม่เปลี่ยน พิมพ์แปะไว้ได้</p>
     <div class="qr">${qrSvg(link)}</div>
-    <div class="row">
-      <button class="btn orange" data-act="qrBig">แสดง QR ขนาดใหญ่บนจอ</button>
-      <button class="btn" data-act="copyLink">คัดลอกลิงก์</button>
+    <div class="row"><button class="btn orange" data-act="qrBig">แสดง QR หลักบนจอ</button><button class="btn ghost" data-act="copyLink">คัดลอกลิงก์</button></div>
+    <h2 style="margin-top:22px">แบบที่ 2: QR ชุดที่ครูเลือกเอง</h2>
+    <p class="meta" style="margin-top:0">นักเรียนสแกนแล้วเข้าชุดที่ครูเลือกไว้ตอนนี้ทันที (${n2} ชนิด: ${selected.filter(o => !o.custom).map(o => esc(o.name)).join(", ")}) ข้อความที่ครูแก้จะติดไปด้วย<br><b>ถ้าครูเพิ่มหรือลบสิ่งมีชีวิต ต้องกลับมากดแสดง QR นี้ใหม่</b></p>
+    ${customs.length ? `<div class="warn">ชนิดที่ครูพิมพ์เพิ่มเอง (${customs.map(o => esc(o.name)).join(", ")}) ใส่ใน QR ไม่ได้ จะไม่แสดงในมือถือนักเรียน</div>` : ""}
+    ${n2 >= 2 ? `<div class="row"><button class="btn orange" data-act="qrBig2">แสดง QR ชุดนี้บนจอ</button><button class="btn ghost" data-act="copyLink2">คัดลอกลิงก์ชุดนี้</button></div>` : `<div class="warn">ต้องมีสิ่งมีชีวิตอย่างน้อย 2 ชนิดในรายการ</div>`}
+    <div class="row" style="margin-top:18px">
       <button class="btn ghost" data-act="preview">ลองดูหน้านักเรียน</button>
       <button class="btn ghost" data-act="key">กลับ</button>
-    </div>
-    <div class="linkbox" style="margin-top:10px">${esc(link)}</div>
-    <p class="meta">ในมือถือนักเรียนจะมีเฉพาะชุดสำเร็จรูป 7 ชุด ชนิดที่ครูเพิ่มเองและข้อความที่ครูแก้จะแสดงเฉพาะบนเครื่องครู</p>`;
-  $("keyCard")._link = link;
+    </div>`;
+  $("keyCard")._link = link; $("keyCard")._link2 = link2;
 }
 function showSheet() {
   const names = selected.map(o => o.name).sort(() => Math.random() - .5);
@@ -3094,7 +3097,9 @@ $("keyCard").addEventListener("click", e => {
   else if (act === "resetEdit") { delete EDITS[sigOf(sorted())]; save(); renderKey(); toast("คืนค่าข้อความเดิมแล้ว"); }
   else if (act === "share") renderShare();
   else if (act === "copyLink") copyText(box._link, "คัดลอกลิงก์แล้ว");
-  else if (act === "qrBig") { $("qrBig").innerHTML = qrSvg(box._link); $("qrModal").classList.add("show"); }
+  else if (act === "qrBig") { $("qrTitle").textContent = "สแกน แล้วเลือกชุดที่ครูบอก"; $("qrBig").innerHTML = qrSvg(box._link); $("qrModal").classList.add("show"); }
+  else if (act === "qrBig2") { $("qrTitle").textContent = "สแกนเพื่อเข้าชุดของวันนี้"; $("qrBig").innerHTML = qrSvg(box._link2); $("qrModal").classList.add("show"); }
+  else if (act === "copyLink2") copyText(box._link2, "คัดลอกลิงก์แล้ว");
   else if (act === "preview") { ss.set("dkeyPreview", "1"); location.hash = "student"; }
   else if (act === "exit") { ss.set("dkeyPreview", null); location.hash = "teacher"; }
   else if (act === "sstart") studentStart();
@@ -3128,7 +3133,7 @@ $("presets").addEventListener("click", e => {
 });
 $("clearBtn").onclick = () => { selected = []; renderAll(); };
 $("saveCustom").onclick = saveCustom;
-$("qrTop").onclick = () => { const l = location.href.split("#")[0] + "#student"; $("qrBig").innerHTML = qrSvg(l); $("qrModal").classList.add("show"); };
+$("qrTop").onclick = () => { $("qrTitle").textContent = "สแกน แล้วเลือกชุดที่ครูบอก"; const l = location.href.split("#")[0] + "#student"; $("qrBig").innerHTML = qrSvg(l); $("qrModal").classList.add("show"); };
 $("qrClose").onclick = () => $("qrModal").classList.remove("show");
 $("qrModal").addEventListener("click", e => { if (e.target.id === "qrModal") $("qrModal").classList.remove("show"); });
 $("cancelCustom").onclick = () => $("modal").classList.remove("show");
