@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ไดโคโตมัสคีย์ สำหรับครู</title>
+<title>กุญแจวิเศษไดโคโตมัสคีย์</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet" />
 <style>
@@ -56,6 +56,27 @@ input:focus-visible,select:focus-visible,button:focus-visible,.qchip:focus-visib
 .choice.wrong{border-color:var(--bad);animation:shake .3s}
 @keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 @media (prefers-reduced-motion:reduce){.choice.wrong{animation:none}}
+#chips,.add,#quick{display:none}
+#filter{margin-bottom:8px}
+.grp{background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:6px;overflow:hidden}
+.grp summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-weight:600;min-height:48px}
+.grp summary::-webkit-details-marker{display:none}
+.grp summary::after{content:"▾";color:var(--muted);margin-left:8px;transition:transform .15s}
+.grp[open] summary::after{transform:rotate(180deg)}
+.grp summary small{color:var(--muted);font-weight:400;margin-left:auto}
+.grp summary small.has{color:var(--ok);font-weight:700}
+.items{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 12px}
+.items.flat{padding:0;max-height:min(46vh,380px);overflow:auto;padding:2px}
+.it{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;cursor:pointer;font:inherit;font-size:.95rem;min-height:40px;color:var(--ink)}
+.it.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.it.on::before{content:"✓ "}
+.inkey{margin-top:14px;border-top:1px solid var(--line);padding-top:14px}
+.picked{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:6px}
+.pk span b{white-space:nowrap}
+.pk{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:6px 6px 6px 8px;min-height:48px}
+.pk i{font-style:normal;width:1.6rem;height:1.6rem;border-radius:8px;background:var(--a);color:#fff;display:grid;place-items:center;font-size:.85rem;flex:none}
+.pk span{flex:1;line-height:1.2}.pk small{display:block;color:var(--muted);font-size:.8rem}
+.pk button{border:0;background:none;color:var(--bad);font-size:1.3rem;cursor:pointer;width:36px;height:36px;flex:none}
 .choice small{color:var(--muted);font-size:.88rem}
 .tag{width:2rem;height:2rem;border-radius:10px;color:#fff;display:grid;place-items:center;font-weight:700;flex:none;font-style:normal}
 .a .tag{background:var(--a)}.b .tag{background:var(--b)}
@@ -74,7 +95,8 @@ label{display:block;margin:8px 0 4px;font-size:.92rem}
 .sheet pre{white-space:pre-wrap;font:inherit;margin:8px 0 0}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(120%);background:#1a2a24;color:#fff;padding:10px 16px;border-radius:12px;opacity:0;transition:.25s;z-index:20;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.student #listCard,.student .topbar{display:none}
+.student:not(.builder) #listCard,.student .topbar,.builder #presetBox{display:none}
+#presetBox{display:none}
 .edit-node{background:#fff;border-radius:12px;padding:10px 12px;margin-bottom:8px}
 .edit-node .meta{margin:0 0 4px}
 .edit-node input{margin-bottom:6px}
@@ -93,26 +115,28 @@ label{display:block;margin:8px 0 4px;font-size:.92rem}
 <div class="wrap">
   <header>
     <h1>กุญแจวิเศษไดโคโตมัสคีย์</h1>
-    <p id="sub">เพิ่มสิ่งมีชีวิต แล้วคีย์จะสร้างให้เอง ใช้สอน ทำใบงาน หรือเล่นเป็นแบบทดสอบได้</p>
-    <div class="topbar"><button class="btn" id="qrTop">QR code สำหรับนักเรียน</button><button class="btn" id="bigBtn">โหมดฉายจอ (ตัวใหญ่)</button></div>
+    <p id="sub">เดินสำรวจ เห็นสิ่งมีชีวิตอะไร แตะเลือกจากรายการ แล้วคีย์จะสร้างให้เอง ใช้สอน ทำใบงาน หรือเล่นเป็นแบบทดสอบได้</p>
+    <div class="topbar"><button class="btn" id="qrTop">QR code</button><button class="btn" id="bigBtn">โหมดฉายจอ (ตัวใหญ่)</button></div>
   </header>
 
   <div class="card" id="listCard">
     <h2>รายการสิ่งมีชีวิต</h2>
+    <p class="meta" style="margin:0 0 8px">แตะเลือกสิ่งมีชีวิตที่สำรวจพบ เลื่อนดูได้ แตะซ้ำเพื่อเอาออก</p>
+    <input id="filter" type="hidden" />
+    <div id="browse"></div>
     <div class="add">
-      <input id="nameInput" placeholder="เช่น วาฬสีน้ำเงิน, เห็ด, ลิงชิมแปนซี" autocomplete="off" />
+      <input id="nameInput" placeholder="เช่น หญ้า, จิ้งจก, มด, มะม่วง" autocomplete="off" />
       <button class="btn" id="addBtn">เพิ่ม</button>
       <div class="suggest" id="suggest"></div>
     </div>
     <div class="quick" id="quick"></div>
     <div class="chips" id="chips"></div>
     <div class="meta" id="count"></div>
-    <h2 style="margin-top:16px">ชุดสำเร็จรูป</h2>
-    <div class="presets" id="presets"></div>
-    <div class="row"><button class="btn ghost" id="clearBtn">ล้างทั้งหมด</button></div>
+    <div class="row" style="margin-top:8px"><button class="btn ghost" id="clearBtn">ล้างทั้งหมด</button></div>
+    <div id="keyCard" class="inkey"></div>
+    <div id="presetBox"><h2 style="margin-top:16px">ชุดตัวอย่าง</h2>
+    <div class="presets" id="presets"></div></div>
   </div>
-
-  <div class="card" id="keyCard"></div>
 </div>
 
 <div class="modal" id="modal">
@@ -142,6 +166,20 @@ label{display:block;margin:8px 0 4px;font-size:.92rem}
       <option value="other_animal">สัตว์กลุ่มอื่น</option>
       <option value="other">อื่น ๆ ที่ไม่ใช่สัตว์ (เช่น สาหร่าย)</option>
     </select>
+    <div id="plantBox" style="display:none">
+      <label for="ptype">เป็นพืชแบบไหน</label>
+      <select id="ptype">
+        <option value="dicot">มีดอก ใบเลี้ยงคู่ เส้นใบเป็นร่างแห (เช่น มะม่วง ชบา)</option>
+        <option value="monocot">มีดอก ใบเลี้ยงเดี่ยว เส้นใบขนาน (เช่น หญ้า มะพร้าว)</option>
+        <option value="gymno">ไม่มีดอก แต่มีเมล็ด (เช่น ต้นสน)</option>
+        <option value="fern">ไม่มีดอกและเมล็ด มีสปอร์ใต้ใบ (เฟิร์น)</option>
+        <option value="moss">ต้นเล็กเตี้ยมาก ขึ้นในที่ชื้น (มอส)</option>
+      </select>
+      <label><input type="checkbox" id="ptree" style="width:auto"> เป็นไม้ยืนต้น ลำต้นใหญ่และสูง</label>
+    </div>
+    <div id="insectBox" style="display:none">
+      <label><input type="checkbox" id="iwings" style="width:auto" checked> มีปีก</label>
+    </div>
     <label for="hab">ที่อยู่อาศัย</label>
     <select id="hab">
       <option value="land">บก</option>
@@ -2498,17 +2536,17 @@ const RAW = [
   ["เห็ดฟาง",["straw mushroom"],"fungus","land","ดอกเห็ดสีเทา นิยมเพาะเป็นอาหาร",["cap"]],
   ["ราขนมปัง",["mold"],"fungus","land","เป็นเส้นใยฟูขึ้นบนอาหาร ไม่มีดอกเห็ด",[]],
   ["ยีสต์",["yeast"],"fungus","land","ราเซลล์เดียว ใช้หมักขนมปังและเครื่องดื่ม",["unicellular"]],
-  ["สาหร่าย",["สาหร่ายสีเขียว","algae"],"algae","fresh","สร้างอาหารเองได้ อาศัยในน้ำ ไม่มีราก ลำต้น และใบที่แท้จริง",[]],
+  ["สาหร่าย",["สาหร่ายสีเขียว","ตะไคร่น้ำ","algae"],"algae","fresh","สร้างอาหารเองได้ อาศัยในน้ำ ไม่มีราก ลำต้น และใบที่แท้จริง",[]],
   ["มอส",["moss"],"plant","land","ต้นเล็กเตี้ย ขึ้นในที่ชื้น ไม่มีท่อลำเลียง",[]],
   ["ต้นสน",["สน","pine"],"plant","land","ไม่มีดอก เมล็ดอยู่ในโคน ใบเรียวเล็กคล้ายเข็ม",["vascular","seed"]],
   ["มะม่วง",["ต้นมะม่วง"],"plant","land","ไม้ยืนต้น ใบเลี้ยงคู่ ให้ผลมะม่วง",["vascular","seed","flower","tree"]],
-  ["กุหลาบ",["ดอกกุหลาบ"],"plant","land","ไม้พุ่มมีดอก ลำต้นมีหนาม",["vascular","seed","flower"]],
-  ["ข้าว",["ต้นข้าว"],"plant","land","พืชใบเลี้ยงเดี่ยว เป็นธัญพืชหลักของคนไทย",["vascular","seed","flower","monocot"]],
+  ["กุหลาบ",["ดอกกุหลาบ"],"plant","land","ไม้พุ่มมีดอก ลำต้นมีหนาม",["vascular","seed","flower","thorns"]],
+  ["ข้าว",["ต้นข้าว"],"plant","land","พืชใบเลี้ยงเดี่ยว เป็นธัญพืชหลักของคนไทย",["vascular","seed","flower","monocot","grain"]],
   ["เฟิร์น",["fern"],"plant","land","มีท่อลำเลียง ไม่มีดอกและเมล็ด สืบพันธุ์ด้วยสปอร์",["vascular"]],
-  ["ไก่",["ไก่บ้าน","chicken"],"bird","land","มีขนนก ปีก และจะงอยปาก บินได้ระยะสั้น",[]],
+  ["ไก่",["ไก่บ้าน","chicken"],"bird","land","มีขนนก ปีก และจะงอยปาก บินได้ระยะสั้น",["comb"]],
   ["เป็ด",["duck"],"bird","both","เท้าเป็นพังผืด ว่ายน้ำเก่ง",["webbed"]],
   ["เพนกวิน",["penguin"],"bird","marine","บินไม่ได้ ใช้ปีกว่ายน้ำ อาศัยในเขตหนาว",["flightless"]],
-  ["นกแก้ว",["parrot"],"bird","land","จะงอยปากงุ้ม เลียนเสียงได้",[]],
+  ["นกแก้ว",["parrot"],"bird","land","จะงอยปากงุ้ม เลียนเสียงได้",["hooked"]],
   ["นกกระจอกเทศ",["ostrich"],"bird","land","นกตัวใหญ่ที่สุด บินไม่ได้ ขายาว วิ่งเร็ว",["flightless"]],
   ["จระเข้",["crocodile"],"reptile","both","มีเกล็ดแข็ง เป็นสัตว์เลือดเย็น อาศัยได้ทั้งในน้ำและบนบก",[]],
   ["งู",["snake"],"reptile","land","ไม่มีขา ลำตัวยาว เคลื่อนที่โดยการเลื้อย",["legless"]],
@@ -2517,7 +2555,7 @@ const RAW = [
   ["กบ",["frog"],"amphibian","both","ผิวเรียบและเปียกชื้น ตัวอ่อนคือลูกอ๊อดอาศัยในน้ำ",[]],
   ["คางคก",["toad"],"amphibian","land","ผิวแห้งขรุขระ มีตุ่ม อาศัยบนบกมากกว่ากบ",["dry_skin"]],
   ["ฉลาม",["shark"],"fish","marine","ปลากระดูกอ่อน มีช่องเหงือกหลายช่อง",["cartilage"]],
-  ["ปลาทอง",["goldfish"],"fish","fresh","ปลากระดูกแข็งน้ำจืด ลำตัวสีส้มทอง",[]],
+  ["ปลาทอง",["goldfish"],"fish","fresh","ปลากระดูกแข็งน้ำจืด ลำตัวสีส้มทอง",["gold"]],
   ["ปลาดุก",["catfish"],"fish","fresh","ปลาน้ำจืด ไม่มีเกล็ด มีหนวดรอบปาก",["barbels"]],
   ["วาฬสีน้ำเงิน",["บลูเวล","blue whale"],"mammal","marine","ไม่มีฟัน มีแผ่นกรองอาหาร เป็นสัตว์ที่ใหญ่ที่สุดในโลก",["cetacean","baleen"]],
   ["วาฬสเปิร์ม",["สเปิร์มเวล","sperm whale"],"mammal","marine","หัวใหญ่เป็นสี่เหลี่ยม มีฟันเฉพาะขากรรไกรล่าง",["cetacean","teeth","square_head"]],
@@ -2542,14 +2580,14 @@ const RAW = [
   ["เสือ",["เสือโคร่ง","tiger"],"mammal","land","แมวป่าตัวใหญ่ มีลายทางพาดลำตัว",["feline","stripes","big_cat"]],
   ["หมี",["bear"],"mammal","land","ตัวใหญ่ เดินลงน้ำหนักเต็มฝ่าเท้า",["bear"]],
   ["แพนด้า",["panda"],"mammal","land","หมีขนสีขาวดำ กินไผ่เป็นอาหารหลัก",["bear","bw_patches"]],
-  ["กระต่าย",["rabbit"],"mammal","land","หูยาว ขาหลังแข็งแรง ใช้กระโดด",[]],
+  ["กระต่าย",["rabbit"],"mammal","land","หูยาว ขาหลังแข็งแรง ใช้กระโดด",["rodent","long_ears"]],
   ["ค้างคาว",["bat"],"mammal","land","สัตว์เลี้ยงลูกด้วยน้ำนมที่บินได้ ปีกเป็นแผ่นหนัง",["wings"]],
   ["จิงโจ้",["kangaroo"],"mammal","land","มีถุงหน้าท้องสำหรับเลี้ยงลูก กระโดดด้วยขาหลัง",["pouch"]],
   ["แมวน้ำ",["seal"],"mammal","both","มีครีบ ว่ายน้ำเก่ง ขึ้นมาพักบนบกได้",["pinniped"]],
   ["ผีเสื้อ",["butterfly"],"insect","land","ปีกมีเกล็ดสี ปากเป็นงวงม้วนได้ ดูดน้ำหวาน",["wings","proboscis"]],
-  ["ผึ้ง",["bee"],"insect","land","มีปีก 2 คู่ มีเหล็กใน สร้างรังและน้ำผึ้ง",["wings"]],
+  ["ผึ้ง",["bee"],"insect","land","มีปีก 2 คู่ มีเหล็กใน สร้างรังและน้ำผึ้ง",["wings","bee"]],
   ["มด",["ant"],"insect","land","ตัวเล็ก มีเอวคอด อาศัยรวมกันเป็นกลุ่มใหญ่",[]],
-  ["ยุง",["mosquito"],"insect","land","มีปีก 1 คู่ ปากเป็นงวงสำหรับเจาะดูด",["wings","two_wings"]],
+  ["ยุง",["mosquito"],"insect","land","มีปีก 1 คู่ ปากเป็นงวงสำหรับเจาะดูด",["wings","two_wings","piercing"]],
   ["ตั๊กแตน",["grasshopper"],"insect","land","ขาคู่หลังใหญ่และยาว ใช้กระโดด",["wings","jump"]],
   ["แมงมุม",["spider"],"arachnid","land","มีขา 8 ขา สร้างใยได้",[]],
   ["แมงป่อง",["scorpion"],"arachnid","land","มีก้าม 1 คู่ ปลายหางมีเหล็กใน",["stinger"]],
@@ -2565,7 +2603,27 @@ const RAW = [
   ["เม่นทะเล",["sea urchin"],"echinoderm","marine","ลำตัวกลม มีหนามยาวรอบตัว",["spines"]],
   ["ดาวทะเล",["starfish"],"echinoderm","marine","ลำตัวเป็นห้าแฉก ผิวมีหนาม",[]],
   ["ไส้เดือน",["earthworm"],"annelid","land","ลำตัวยาวเป็นปล้อง อาศัยในดิน",[]],
-  ["ปลิง",["leech"],"annelid","fresh","ลำตัวเป็นปล้อง มีแป้นดูด ดูดเลือดเป็นอาหาร",["sucker"]]
+  ["ปลิง",["leech"],"annelid","fresh","ลำตัวเป็นปล้อง มีแป้นดูด ดูดเลือดเป็นอาหาร",["sucker"]],
+  ["หญ้า",["ต้นหญ้า","grass"],"plant","land","พืชใบเลี้ยงเดี่ยว ใบเรียวยาว ขึ้นตามพื้นดินทั่วไป",["vascular","seed","flower","monocot"]],
+  ["มะพร้าว",["ต้นมะพร้าว","coconut"],"plant","land","ไม้ยืนต้นใบเลี้ยงเดี่ยว ลำต้นตรงไม่แตกกิ่ง ใบยาวเป็นทาง",["vascular","seed","flower","monocot","tree"]],
+  ["กล้วย",["ต้นกล้วย","banana"],"plant","land","ใบเลี้ยงเดี่ยว ใบใหญ่ ลำต้นเทียมเกิดจากกาบใบซ้อนกัน",["vascular","seed","flower","monocot","pseudostem"]],
+  ["ไผ่",["ต้นไผ่","bamboo"],"plant","land","ใบเลี้ยงเดี่ยว ลำต้นแข็งเป็นปล้อง ข้างในกลวง",["vascular","seed","flower","monocot","hollow_stem"]],
+  ["ชบา",["ดอกชบา","hibiscus"],"plant","land","ไม้พุ่มใบเลี้ยงคู่ ดอกใหญ่สีสด ลำต้นไม่มีหนาม",["vascular","seed","flower"]],
+  ["มะขาม",["ต้นมะขาม","tamarind"],"plant","land","ไม้ยืนต้นใบเลี้ยงคู่ ใบย่อยเล็กเรียงเป็นคู่ ผลเป็นฝัก",["vascular","seed","flower","tree","pinnate"]],
+  ["นกพิราบ",["พิราบ","pigeon"],"bird","land","นกขนาดกลาง ขนสีเทา พบตามอาคารและลานกว้าง",[]],
+  ["นกกระจอก",["กระจอก","sparrow"],"bird","land","นกตัวเล็ก ขนสีน้ำตาล พบทั่วไปตามบ้าน",["small_bird"]],
+  ["จิ้งจก",["gecko","house lizard"],"reptile","land","ตัวเล็ก นิ้วมีแผ่นยึดเกาะ ไต่ผนังได้",["sticky_toes"]],
+  ["ตุ๊กแก",["tokay"],"reptile","land","ตัวใหญ่กว่าจิ้งจก ลำตัวมีจุดสีส้ม ไต่ผนังได้ ร้องเสียงดัง",["sticky_toes","big_gecko"]],
+  ["ปลานิล",["tilapia"],"fish","fresh","ปลาน้ำจืด มีเกล็ด ลำตัวมีลายแถบสีเข้มจาง ๆ",[]],
+  ["ปลาหางนกยูง",["หางนกยูง","guppy"],"fish","fresh","ปลาน้ำจืดตัวเล็ก หางสีสวยแผ่กว้าง",["small_fish"]],
+  ["หนู",["mouse","rat"],"mammal","land","ตัวเล็ก ฟันหน้าใช้แทะ หางยาวไม่มีขนฟู",["rodent"]],
+  ["กระรอก",["squirrel"],"mammal","land","ฟันหน้าใช้แทะ หางเป็นพวงฟู ปีนต้นไม้เก่ง",["rodent","bushy_tail"]],
+  ["แมลงวัน",["fly"],"insect","land","มีปีก 1 คู่ ตารวมใหญ่ ปากเป็นแบบซับดูด",["wings","two_wings"]],
+  ["แมลงปอ",["dragonfly"],"insect","land","ปีกใส 2 คู่ ลำตัวยาวเรียว ตาโตมาก",["wings","dragonfly"]],
+  ["แมลงสาบ",["cockroach"],"insect","land","ลำตัวแบน สีน้ำตาล หนวดยาว วิ่งเร็ว",["wings","flat_body"]],
+  ["ด้วง",["แมลงปีกแข็ง","beetle"],"insect","land","ปีกคู่หน้าแข็งเป็นเกราะหุ้มปีกคู่หลัง",["wings","elytra"]],
+  ["จิ้งหรีด",["cricket"],"insect","land","ขาหลังใหญ่ใช้กระโดด หนวดยาวกว่าลำตัว ทำเสียงร้องได้",["wings","jump","cricket"]],
+  ["หอยเชอรี่",["golden apple snail"],"mollusk","fresh","หอยน้ำจืด เปลือกขดสีน้ำตาล วางไข่สีชมพู",["shell"]]
 ];
 
 function makeOrg(name, aliases, cls, hab, unique, extra, custom) {
@@ -2584,11 +2642,12 @@ const PRESETS = [
   ["สัตว์เลี้ยงลูกด้วยนม", ["ม้า","ม้าลาย","วัว","ยีราฟ","ช้าง","แรด","เสือ","สิงโต","แมว","สุนัข","หมาป่า","หมี","แพนด้า","จิงโจ้","กระต่าย","คน","กอริลลา","ลิงชิมแปนซี"]]
 ];
 const SAMPLE = ["เห็ด","ไก่","จระเข้","วาฬสีน้ำเงิน","วาฬสเปิร์ม","วาฬเพชฌฆาต","โลมา","ลิงชิมแปนซี","ม้าลาย","หมาจิ้งจอก"];
-const QUICK = ["เห็ด","ไก่","จระเข้","วาฬสีน้ำเงิน","โลมา","ลิงชิมแปนซี","ม้าลาย","หมาจิ้งจอก","ช้าง","กบ"];
+const QUICK = ["หญ้า","มะม่วง","ไก่","นกพิราบ","จิ้งจก","มด","ผีเสื้อ","แมลงปอ","แมว","สุนัข","กบ","ไส้เดือน","เห็ด","มะพร้าว"];
 const STORE = "dkey-teacher-v1";
 
 let selected = [], pendingName = "", tree = null, weakIds = [];
-let fixedStudent = false;
+let fixedStudent = false, builder = false;
+const SSTORE = "dkey-student-v1";
 let EDITS = {}, studentMode = false, studentEdits = {}, queue = [], qi = 0, totalMistakes = 0;
 const B36 = "0123456789abcdefghijklmnopqrstuvwxyz";
 const enc2 = n => B36[Math.floor(n / 36)] + B36[n % 36];
@@ -2648,7 +2707,12 @@ const TRAITS = [
   { test:o=>has(o,"seed"), q:"มีเมล็ดหรือไม่?", a:()=>"มีเมล็ด", b:()=>"ไม่มีเมล็ด สืบพันธุ์ด้วยสปอร์" },
   { test:o=>has(o,"flower"), q:"มีดอกหรือไม่?", a:()=>"มีดอก", b:()=>"ไม่มีดอก" },
   { test:o=>has(o,"monocot"), q:"ใบเลี้ยงและเส้นใบเป็นแบบใด?", a:()=>"ใบเลี้ยงเดี่ยว เส้นใบเรียงขนานกัน", b:()=>"ใบเลี้ยงคู่ เส้นใบเป็นร่างแห" },
-  { test:o=>has(o,"tree"), q:"ลำต้นเป็นแบบใด?", a:()=>"ไม้ยืนต้น ลำต้นใหญ่และสูง", b:()=>"ไม้พุ่ม ลำต้นเล็ก แตกกิ่งมาก" },
+  { test:o=>has(o,"tree"), q:"ลำต้นเป็นแบบใด?", a:()=>"ไม้ยืนต้น ลำต้นใหญ่และสูง", b:()=>"ลำต้นเล็ก ไม่ใช่ไม้ยืนต้น" },
+  { test:o=>has(o,"pseudostem"), q:"ลำต้นเป็นแบบใด?", a:()=>"ใบใหญ่ ลำต้นเทียมเกิดจากกาบใบซ้อนกัน", b:()=>"ไม่มีลำต้นเทียม" },
+  { test:o=>has(o,"hollow_stem"), q:"ลำต้นแข็งและกลวงหรือไม่?", a:()=>"ลำต้นแข็งเป็นปล้อง ข้างในกลวง", b:()=>"ลำต้นอ่อน ไม่แข็ง" },
+  { test:o=>has(o,"grain"), q:"ปลูกเป็นอาหารหรือขึ้นเอง?", a:()=>"ปลูกเพื่อเก็บเมล็ดเป็นอาหาร", b:()=>"ขึ้นเองตามพื้นดินทั่วไป" },
+  { test:o=>has(o,"pinnate"), q:"ใบและผลเป็นอย่างไร?", a:()=>"ใบย่อยเล็กเรียงเป็นคู่ ผลเป็นฝัก", b:()=>"ใบเดี่ยวขนาดใหญ่" },
+  { test:o=>has(o,"thorns"), q:"ลำต้นมีหนามหรือไม่?", a:()=>"ลำต้นมีหนาม", b:()=>"ลำต้นไม่มีหนาม" },
   { test:o=>o.cls==="fungus", q:"ได้อาหารมาอย่างไร?", a:()=>"ดูดซึมอาหารจากสิ่งที่อาศัยอยู่ เคลื่อนที่เองไม่ได้",
     b: no => no.every(o=>has(o,"animal")) ? "กินสิ่งมีชีวิตอื่นเป็นอาหาร เคลื่อนที่ได้" : "ไม่ได้ดูดซึมอาหารแบบรา" },
   { test:o=>o.cls==="plant", q:"มีราก ลำต้น และใบหรือไม่?", a:()=>"มีราก ลำต้น และใบ", b:()=>"ไม่มีราก ลำต้น และใบ" },
@@ -2674,8 +2738,14 @@ const TRAITS = [
   { test:o=>o.cls==="mollusk", q:"ลำตัวนิ่มหรือไม่?", a:()=>"ลำตัวนิ่ม ไม่แบ่งเป็นปล้อง", b:()=>"ลำตัวไม่นิ่ม" },
   { test:o=>o.cls==="insect"&&has(o,"wings"), q:"มีปีกหรือไม่?", a:()=>"มีปีก", b:()=>"ไม่มีปีก" },
   { test:o=>has(o,"two_wings"), q:"มีปีกกี่คู่?", a:()=>"มีปีก 1 คู่", b:()=>"มีปีก 2 คู่" },
+  { test:o=>has(o,"piercing"), q:"ปากเป็นแบบใด?", a:()=>"ปากเป็นงวงยาว สำหรับเจาะดูด", b:()=>"ปากเป็นแบบซับดูด" },
+  { test:o=>has(o,"elytra"), q:"ปีกคู่หน้าเป็นอย่างไร?", a:()=>"ปีกคู่หน้าแข็งเป็นเกราะ", b:()=>"ปีกคู่หน้าไม่แข็ง" },
   { test:o=>has(o,"jump"), q:"ขาคู่หลังเป็นอย่างไร?", a:()=>"ขาคู่หลังใหญ่และยาว ใช้กระโดด", b:()=>"ขาคู่หลังไม่ใหญ่ ไม่ได้ใช้กระโดด" },
-  { test:o=>has(o,"proboscis"), q:"ปีกและปากเป็นอย่างไร?", a:()=>"ปีกมีเกล็ดสี ปากเป็นงวงม้วนได้", b:()=>"ปีกใส ปากไม่เป็นงวงม้วน" },
+  { test:o=>has(o,"cricket"), q:"หนวดยาวแค่ไหน?", a:()=>"หนวดยาวกว่าลำตัว ทำเสียงร้องได้", b:()=>"หนวดสั้นกว่าลำตัว" },
+  { test:o=>has(o,"dragonfly"), q:"ลำตัวและตาเป็นอย่างไร?", a:()=>"ลำตัวยาวเรียว ตาโตมาก ปีกใส", b:()=>"ลำตัวไม่ยาวเรียว" },
+  { test:o=>has(o,"proboscis"), q:"ปีกและปากเป็นอย่างไร?", a:()=>"ปีกมีเกล็ดสี ปากเป็นงวงม้วนได้", b:()=>"ปากไม่เป็นงวงม้วน" },
+  { test:o=>has(o,"bee"), q:"มีเหล็กในหรือไม่?", a:()=>"มีเหล็กในที่ปลายท้อง", b:()=>"ไม่มีเหล็กใน" },
+  { test:o=>has(o,"flat_body"), q:"ลำตัวเป็นอย่างไร?", a:()=>"ลำตัวแบน หนวดยาว วิ่งเร็ว", b:()=>"ลำตัวไม่แบน" },
   { test:o=>has(o,"stinger"), q:"มีก้ามและเหล็กในที่หางหรือไม่?", a:()=>"มีก้าม 1 คู่ ปลายหางมีเหล็กใน", b:()=>"ไม่มีก้าม ไม่มีเหล็กใน" },
   { test:o=>has(o,"two_pairs"), q:"มีขาปล้องละกี่คู่?", a:()=>"มีขาปล้องละ 2 คู่", b:()=>"มีขาปล้องละ 1 คู่" },
   { test:o=>has(o,"coral"), q:"เกาะอยู่กับที่หรือลอยไปมาในน้ำ?", a:()=>"เกาะอยู่กับที่ สร้างโครงหินปูน", b:()=>"ลอยไปมาในน้ำ ลำตัวใสคล้ายร่ม" },
@@ -2683,6 +2753,8 @@ const TRAITS = [
   { test:o=>has(o,"sucker"), q:"มีแป้นดูดหรือไม่?", a:()=>"มีแป้นดูด ดูดเลือดเป็นอาหาร", b:()=>"ไม่มีแป้นดูด" },
   { test:o=>has(o,"cartilage"), q:"โครงกระดูกเป็นแบบใด?", a:()=>"โครงกระดูกเป็นกระดูกอ่อน มีช่องเหงือกหลายช่อง", b:()=>"โครงกระดูกเป็นกระดูกแข็ง มีแผ่นปิดเหงือก" },
   { test:o=>has(o,"barbels"), q:"มีเกล็ดหรือไม่?", a:()=>"ไม่มีเกล็ด มีหนวดรอบปาก", b:()=>"มีเกล็ดปกคลุมลำตัว" },
+  { test:o=>has(o,"small_fish"), q:"ขนาดและหางเป็นอย่างไร?", a:()=>"ตัวเล็กมาก หางสีสวยแผ่กว้าง", b:()=>"ตัวใหญ่กว่า หางไม่แผ่กว้าง" },
+  { test:o=>has(o,"gold"), q:"ลำตัวมีสีอะไร?", a:()=>"ลำตัวสีส้มทอง", b:()=>"ลำตัวสีเทาหรือดำ มีลายแถบ" },
   { test:o=>has(o,"cetacean"), q:"อาศัยอยู่ที่ใด และหายใจทางไหน?",
     a: (yes, no) => no.every(o=>o.hab==="land") ? "อาศัยในทะเลตลอดชีวิต ไม่มีขาหลัง ว่ายน้ำด้วยครีบ" : "รูหายใจอยู่บนหัว ไม่มีขาหลัง",
     b: no => no.every(o=>o.hab==="land") ? "อาศัยบนบก มีขา 4 ขา" : "รูจมูกอยู่ที่ปลายปาก" },
@@ -2693,6 +2765,8 @@ const TRAITS = [
   { test:o=>has(o,"cetacean")&&has(o,"rostrum"), q:"ปากเป็นอย่างไร?", a:()=>"ลำตัวสีเทา ปากยื่นยาวคล้ายจะงอย", b:()=>"ปากไม่ยื่นยาว" },
   { test:o=>has(o,"cetacean")&&has(o,"hump"), q:"มีโหนกหลังและครีบอกยาวหรือไม่?", a:()=>"มีโหนกหลัง ครีบอกยาวมาก", b:()=>"ไม่มีโหนกหลัง ครีบอกสั้น" },
   { test:o=>has(o,"wings") && o.cls==="mammal", q:"บินได้หรือไม่?", a:()=>"บินได้ ปีกเป็นแผ่นหนัง", b:()=>"บินไม่ได้" },
+  { test:o=>has(o,"rodent"), q:"ฟันหน้าเป็นอย่างไร?", a:()=>"ฟันหน้าคู่ใหญ่ ใช้แทะ", b:()=>"ไม่มีฟันหน้าแบบแทะ" },
+  { test:o=>has(o,"long_ears"), q:"หูยาวหรือไม่?", a:()=>"หูยาวมาก หางสั้นเป็นพู่", b:()=>"หูสั้น หางยาว" },
   { test:o=>has(o,"pouch"), q:"มีถุงหน้าท้องหรือไม่?", a:()=>"มีถุงหน้าท้องสำหรับเลี้ยงลูก", b:()=>"ไม่มีถุงหน้าท้อง" },
   { test:o=>has(o,"thumbs"), q:"มีนิ้วโป้งที่หยิบจับของได้ และมีหางหรือไม่?", a:()=>"มีนิ้วโป้งหยิบจับของได้ ไม่มีหาง", b:()=>"มีหาง นิ้วหยิบจับของไม่ได้" },
   { test:o=>has(o,"huge_ape"), q:"ขนาดตัวเป็นอย่างไร?", a:()=>"ตัวใหญ่มาก อกกว้าง", b:()=>"ตัวเล็กกว่า" },
@@ -2717,7 +2791,12 @@ const TRAITS = [
   { test:o=>has(o,"legless"), q:"มีขาหรือไม่?", a:()=>"ไม่มีขา ลำตัวยาว เคลื่อนที่โดยการเลื้อย", b:()=>"มีขา" },
   { test:o=>has(o,"shell") && o.cls==="reptile", q:"มีกระดองหรือไม่?", a:()=>"มีกระดองแข็งหุ้มลำตัว", b:()=>"ไม่มีกระดอง" },
   { test:o=>has(o,"flightless"), q:"บินได้หรือไม่?", a:()=>"บินไม่ได้", b:()=>"บินได้ (แม้จะบินได้ระยะสั้น)" },
+  { test:o=>has(o,"comb"), q:"บนหัวมีหงอนหรือไม่?", a:()=>"มีหงอนและเหนียงสีแดง", b:()=>"ไม่มีหงอน" },
+  { test:o=>has(o,"hooked"), q:"จะงอยปากเป็นอย่างไร?", a:()=>"จะงอยปากงุ้มโค้ง", b:()=>"จะงอยปากตรง" },
+  { test:o=>has(o,"sticky_toes"), q:"ไต่ผนังได้หรือไม่?", a:()=>"นิ้วมีแผ่นยึดเกาะ ไต่ผนังได้", b:()=>"ไต่ผนังไม่ได้" },
+  { test:o=>has(o,"big_gecko"), q:"ขนาดและลวดลายเป็นอย่างไร?", a:()=>"ตัวใหญ่ ลำตัวมีจุดสีส้ม", b:()=>"ตัวเล็ก ไม่มีจุดสีส้ม" },
   { test:o=>has(o,"webbed"), q:"มีเท้าเป็นพังผืดหรือไม่?", a:()=>"เท้าเป็นพังผืด ว่ายน้ำเก่ง", b:()=>"เท้าไม่เป็นพังผืด" },
+  { test:o=>has(o,"small_bird"), q:"ขนาดตัวเป็นอย่างไร?", a:()=>"ตัวเล็ก ขนสีน้ำตาล", b:()=>"ตัวขนาดกลาง ขนสีเทา" },
   { test:o=>o.hab==="marine", q:"อาศัยในทะเลหรือไม่?", a:()=>"อาศัยในทะเลเป็นหลัก", b:()=>"ไม่ได้อาศัยในทะเล" },
   { test:o=>o.hab==="fresh", q:"อาศัยในน้ำจืดหรือไม่?", a:()=>"อาศัยในน้ำจืด", b:()=>"ไม่ได้อาศัยในน้ำจืด" },
   { test:o=>o.hab==="both", q:"อาศัยได้ทั้งในน้ำและบนบกหรือไม่?", a:()=>"อาศัยได้ทั้งในน้ำและบนบก", b:()=>"อาศัยบนบกเป็นหลัก" }
@@ -2725,7 +2804,13 @@ const TRAITS = [
 
 /* ---------- ข้อมูล / บันทึก ---------- */
 function save() {
-  if (studentMode) return;
+  if (studentMode) {
+    if (builder) try {
+      localStorage.setItem(SSTORE, JSON.stringify({ sel: selected.map(o => o.name),
+        custom: DB.filter(o => o.custom).map(o => [o.name, o.cls, o.hab, o.unique, o.extra]) }));
+    } catch (e) {}
+    return;
+  }
   try {
     localStorage.setItem(STORE, JSON.stringify({
       sel: selected.map(o => o.name), edits: EDITS,
@@ -2808,18 +2893,24 @@ function renderChips() {
   $("chips").innerHTML = selected.map((o, i) =>
     `<span class="chip${o.custom ? " custom" : ""}">${esc(o.name)}<button data-rm="${i}" aria-label="ลบ ${esc(o.name)}">×</button></span>`).join("");
   $("count").textContent = selected.length
-    ? "รายการจำแนก " + selected.length + " ชนิด คีย์ด้านล่างอัปเดตตามรายการนี้"
-    : "ยังไม่มีรายการ พิมพ์ชื่อแล้วกดเพิ่ม หรือแตะชื่อด้านบน";
+    ? "พบแล้ว " + selected.length + " ชนิด"
+    : "ยังไม่ได้เลือก";
 }
 function renderQuick() {
   $("quick").innerHTML = QUICK.map(n => DB.find(o => o.name === n)).filter(o => o && !isIn(o))
     .map(o => `<button class="qchip" data-quick="${esc(o.name)}">+ ${esc(o.name)}</button>`).join("");
 }
+function pickedList() {
+  if (!selected.length) return "";
+  return `<h2>สิ่งมีชีวิตที่เลือก (${selected.length} ชนิด)</h2>
+    <div class="picked">${selected.map((o, i) => `<div class="pk"><i>${i + 1}</i><span><b>${esc(o.name)}</b><small>${esc(GROUP_TH[o.cls] || "")}</small></span><button data-rm="${i}" aria-label="ลบ ${esc(o.name)}">×</button></div>`).join("")}</div>`;
+}
 function renderKey() {
   const box = $("keyCard");
+  if (builder && selected.length < 2) { tree = null; return builderKey(); }
   if (selected.length < 2) {
     tree = selected.length ? leaf(selected[0]) : null;
-    box.innerHTML = `<h2>ไดโคโตมัสคีย์</h2><div class="empty">${selected.length
+    box.innerHTML = `${pickedList()}<h2${selected.length ? ' style="margin-top:20px"' : ""}>ไดโคโตมัสคีย์</h2><div class="empty">${selected.length
       ? "มีเพียง <b>" + esc(selected[0].name) + "</b> เพิ่มอีกอย่างน้อย 1 ชนิดเพื่อสร้างคีย์"
       : "เพิ่มอย่างน้อย 2 ชนิด เพื่อสร้างไดโคโตมัสคีย์"}</div>`;
     return;
@@ -2828,23 +2919,28 @@ function renderKey() {
   numberTree(tree);
   const ed = curEdits(); applyEdits(tree, ed);
   const nEd = Object.keys(ed).length;
-  if (studentMode) return studentHome();
+  if (studentMode) return builder ? builderKey() : studentHome();
   box.innerHTML = `
-    <h2>ไดโคโตมัสคีย์</h2>
+    ${pickedList()}
+    <h2 style="margin-top:20px">ไดโคโตมัสคีย์</h2>
     <div class="key">${esc(keyLines(tree).join("\n"))}</div>
     ${nEd ? `<div class="meta">แก้ข้อความแล้ว ${nEd} จุด</div>` : ""}
-    ${weakIds.length ? `<div class="warn">ข้อ ${weakIds.join(", ")} ยังหาลักษณะร่วมที่ใช้แยกไม่ได้ ระบบจึงใช้ลักษณะเด่นของแต่ละชนิดแทน ครูควรตรวจทานข้อนี้ก่อนใช้สอน</div>` : ""}
+    ${weakIds.length ? `<div class="warn">ข้อ ${weakIds.join(", ")} ยังหาลักษณะร่วมที่ใช้แยกไม่ได้ ระบบจึงใช้ลักษณะเด่นที่ใส่ไว้แทน ลองดูว่าลักษณะเด่นชัดเจนพอไหม</div>` : ""}
     <div class="row">
-      <button class="btn" data-act="start">จำแนกเอง</button>
-      <button class="btn orange" data-act="quiz">แบบทดสอบ</button>
       <button class="btn ghost" data-act="edit">แก้ข้อความ</button>
-      <button class="btn orange" data-act="share">QR code สำหรับนักเรียน</button>
-      <button class="btn ghost" data-act="sheet">ใบงาน / เฉลย</button>
-      <button class="btn ghost" data-act="copyKey">คัดลอกคีย์</button>
-    </div>
-    <p class="meta"><b>จำแนกเอง:</b> นึกถึงสิ่งมีชีวิต 1 ชนิดในรายการ แล้วเลือกลักษณะที่ตรงทีละข้อ ระบบจะบอกว่าคือชนิดใด<br><b>แบบทดสอบ:</b> ระบบบอกชื่อสิ่งมีชีวิตมาให้ แล้วเลือกลักษณะทีละข้อจนถึงชนิดนั้น ถ้าเลือกผิดจะไปต่อไม่ได้</p>`;
+    </div>`;
 }
-function renderAll() { renderChips(); renderQuick(); renderKey(); hideSuggest(); save(); }
+const GROUP_ORDER = ["plant","algae","fungus","insect","arachnid","myriapod","crustacean","mollusk","annelid","cnidarian","sponge","echinoderm","fish","amphibian","reptile","bird","mammal","other_animal","other"];
+const openGroups = new Set();
+function renderBrowse() {
+  const q = norm($("filter").value);
+  const all = DB.slice().sort((a, b) => a.name.localeCompare(b.name, "th"));
+  const list = q ? all.filter(o => namesOf(o).some(x => norm(x).includes(q))) : all;
+  $("browse").innerHTML = list.length
+    ? `<div class="items flat">${list.map(o => `<button class="it${isIn(o) ? " on" : ""}" data-tog="${DB.indexOf(o)}">${esc(o.name)}</button>`).join("")}</div>`
+    : `<div class="empty">ไม่พบชื่อนี้ ลองพิมพ์คำอื่น</div>`;
+}
+function renderAll() { renderChips(); renderQuick(); renderBrowse(); renderKey(); hideSuggest(); save(); }
 
 function showSuggest(list, q) {
   const el = $("suggest");
@@ -2859,6 +2955,8 @@ function openCustom(q) {
   pendingName = q;
   $("modalName").textContent = "จะเพิ่ม “" + q + "” เป็นชนิดใหม่";
   $("unique").value = ""; $("whale").value = ""; $("cls").value = "";
+  $("plantBox").style.display = "none"; $("insectBox").style.display = "none";
+  $("ptype").value = "dicot"; $("ptree").checked = false; $("iwings").checked = true;
   $("modal").classList.add("show");
   $("cls").focus();
 }
@@ -2892,6 +2990,15 @@ function saveCustom() {
   if (!w && !$("cls").value) { toast("กรุณาเลือกกลุ่มก่อน"); $("cls").focus(); return; }
   if (w) extra.push("cetacean", w);
   const cls = w ? "mammal" : $("cls").value, hab = w ? "marine" : $("hab").value;
+  if (cls === "plant") {
+    const t = $("ptype").value;
+    if (t !== "moss") extra.push("vascular");
+    if (t === "dicot" || t === "monocot" || t === "gymno") extra.push("seed");
+    if (t === "dicot" || t === "monocot") extra.push("flower");
+    if (t === "monocot") extra.push("monocot");
+    if ($("ptree").checked && t !== "moss" && t !== "fern") extra.push("tree");
+  }
+  if (cls === "insect" && $("iwings").checked) extra.push("wings");
   const org = makeOrg(name, [], cls, hab, $("unique").value.trim() || name, extra, true);
   DB.push(org);
   $("modal").classList.remove("show");
@@ -2915,12 +3022,45 @@ function startQuiz() {
 function studentStart() {
   queue = selected.slice().sort(() => Math.random() - .5); qi = 0; totalMistakes = 0; startQuiz();
 }
+function enterBuilder() {
+  builder = true; document.body.classList.add("builder");
+  $("sub").textContent = "พิมพ์ชื่อสิ่งมีชีวิตที่สำรวจพบ แล้วคีย์จะสร้างให้เอง";
+  selected = [];
+  try {
+    const d = JSON.parse(localStorage.getItem(SSTORE) || "null");
+    if (d) {
+      (d.custom || []).forEach(([n, c, h, u, ex]) => { if (!DB.some(o => o.name === n)) DB.push(makeOrg(n, [], c, h, u, ex, true)); });
+      selected = (d.sel || []).map(n => DB.find(o => o.name === n)).filter(Boolean);
+    }
+  } catch (e) {}
+  renderAll(); window.scrollTo(0, 0);
+}
+function leaveBuilder() {
+  builder = false; document.body.classList.remove("builder");
+  $("sub").textContent = "อ่านลักษณะแล้วเลือกทีละข้อ จนถึงชื่อสิ่งมีชีวิต";
+  studentPicker();
+}
+function builderKey() {
+  $("keyCard").innerHTML = selected.length < 2
+    ? `<h2>คีย์ของฉัน</h2><div class="empty">พิมพ์ชื่อสิ่งมีชีวิตที่สำรวจพบอย่างน้อย 2 ชนิด แล้วคีย์จะขึ้นตรงนี้</div>
+       <div class="row" style="justify-content:center"><button class="btn ghost" data-act="spick">กลับไปเลือกชุด</button></div>`
+    : `<h2>คีย์ของฉัน</h2>
+    <div class="key">${esc(keyLines(tree).join("\n"))}</div>
+    ${weakIds.length ? `<div class="warn">ข้อ ${weakIds.join(", ")} ยังแยกด้วยลักษณะร่วมไม่ได้ ลองดูลักษณะเด่นที่ใส่ไว้ว่าชัดเจนพอไหม</div>` : ""}
+    <div class="row">
+      <button class="btn" data-act="start">จำแนกเอง</button>
+      <button class="btn orange" data-act="sstart">แบบทดสอบ</button>
+      <button class="btn ghost" data-act="copyKey">คัดลอกคีย์ (ส่งครู)</button>
+      <button class="btn ghost" data-act="spick">กลับไปเลือกชุด</button>
+    </div>`;
+}
 function studentPicker() {
   $("keyCard").innerHTML = `
     <h2>เลือกชุดสิ่งมีชีวิต</h2>
     <p class="meta" style="margin-top:0">เลือกชุดที่ครูบอก</p>
     <div style="display:grid;gap:8px">
       ${PRESETS.map(([t, l], i) => `<button class="choice a" data-spreset="${i}"><i class="tag">${i + 1}</i><span><b>${esc(t)}</b><br><small>${l.length} ชนิด</small></span></button>`).join("")}
+      <button class="choice b" data-act="build"><i class="tag">${PRESETS.length + 1}</i><span><b>สำรวจเอง</b><br><small>พิมพ์ชื่อสิ่งมีชีวิตที่ไปสำรวจพบ แล้วสร้างคีย์ของตัวเอง</small></span></button>
     </div>
     ${ss.get("dkeyPreview") ? `<div class="row" style="justify-content:center"><button class="btn ghost" data-act="exit">ออกจากหน้านักเรียน (ครู)</button></div>` : ""}`;
 }
@@ -2945,7 +3085,7 @@ function studentDone() {
       <div class="badge">ทำครบแล้ว</div>
       <div class="name">${n} / ${n} ชนิด</div>
       <p class="meta">${totalMistakes ? "ตอบผิดรวม " + totalMistakes + " ครั้ง ลองอีกรอบให้ผิดน้อยลง" : "ไม่ผิดเลยสักข้อ เก่งมาก!"}</p>
-      <div class="row" style="justify-content:center"><button class="btn orange" data-act="sstart">ทำอีกรอบ</button><button class="btn ghost" data-act="shome">หน้าแรก</button></div>
+      <div class="row" style="justify-content:center"><button class="btn orange" data-act="sstart">ทำอีกรอบ</button><button class="btn ghost" data-act="shome">${builder ? "กลับไปดูคีย์" : "หน้าแรก"}</button></div>
     </div>`;
 }
 function showNode(node) {
@@ -2962,7 +3102,7 @@ function showNode(node) {
         <p class="meta">${esc(o.unique)}</p>
         <div class="path"><b>เส้นทางที่ใช้จำแนก</b><br>${path.map((p, i) => (i + 1) + ". " + esc(p)).join("<br>")}</div>
         <div class="row" style="justify-content:center">
-          ${studentMode ? (quiz ? `<button class="btn orange" data-act="snext">${qi + 1 >= queue.length ? "ดูผลรวม" : "ข้อต่อไป"}</button>` : `<button class="btn" data-act="start">จำแนกชนิดอื่น</button><button class="btn ghost" data-act="back">ย้อนกลับ 1 ข้อ</button>`) + `<button class="btn ghost" data-act="shome">หน้าแรก</button>` : `
+          ${studentMode ? (quiz ? `<button class="btn orange" data-act="snext">${qi + 1 >= queue.length ? "ดูผลรวม" : "ข้อต่อไป"}</button>` : `<button class="btn" data-act="start">จำแนกชนิดอื่น</button><button class="btn ghost" data-act="back">ย้อนกลับ 1 ข้อ</button>`) + `<button class="btn ghost" data-act="shome">${builder ? "กลับไปดูคีย์" : "หน้าแรก"}</button>` : `
           ${quiz ? `<button class="btn orange" data-act="quiz">ข้อต่อไป</button>` : `<button class="btn" data-act="start">จำแนกชนิดอื่น</button>`}
           <button class="btn ghost" data-act="back">ย้อนกลับ 1 ข้อ</button>
           <button class="btn ghost" data-act="key">ดูคีย์</button>`}
@@ -2982,7 +3122,7 @@ function showNode(node) {
     </div>
     <div class="row">
       ${stack.length ? `<button class="btn ghost" data-act="back">ย้อนกลับ 1 ข้อ</button>` : ""}
-      ${studentMode ? `<button class="btn ghost" data-act="shome">หน้าแรก</button>` : `<button class="btn ghost" data-act="key">กลับไปดูคีย์</button>`}
+      ${studentMode ? `<button class="btn ghost" data-act="shome">${builder ? "กลับไปดูคีย์" : "หน้าแรก"}</button>` : `<button class="btn ghost" data-act="key">กลับไปดูคีย์</button>`}
     </div>`;
 }
 function pick(side, btn) {
@@ -3077,6 +3217,8 @@ function showSheet() {
 
 /* ---------- ผูกปุ่ม ---------- */
 $("keyCard").addEventListener("click", e => {
+  const rm = e.target.closest("[data-rm]");
+  if (rm) return removeAt(+rm.dataset.rm);
   const sp = e.target.closest("[data-spreset]");
   if (sp) { selected = PRESETS[+sp.dataset.spreset][1].map(n => DB.find(o => o.name === n)).filter(Boolean); renderKey(); window.scrollTo(0, 0); return; }
   const p = e.target.closest("[data-pick]");
@@ -3104,13 +3246,25 @@ $("keyCard").addEventListener("click", e => {
   else if (act === "exit") { ss.set("dkeyPreview", null); location.hash = "teacher"; }
   else if (act === "sstart") studentStart();
   else if (act === "snext") { qi++; startQuiz(); }
-  else if (act === "shome") studentHome();
-  else if (act === "spick") studentPicker();
+  else if (act === "shome") builder ? renderKey() : studentHome();
+  else if (act === "spick") builder ? leaveBuilder() : studentPicker();
+  else if (act === "build") enterBuilder();
 });
 $("keyCard").addEventListener("input", e => {
   const i = e.target.closest("[data-k]"); if (!i) return;
   i.classList.toggle("changed", !!i.value.trim() && i.value.trim() !== i.placeholder);
 });
+$("browse").addEventListener("click", e => {
+  const b = e.target.closest("[data-tog]");
+  if (!b) return;
+  const o = DB[+b.dataset.tog];
+  if (isIn(o)) removeAt(selected.indexOf(o)); else addOrg(o);
+});
+$("browse").addEventListener("toggle", e => {
+  const d = e.target.closest("[data-g]"); if (!d || $("filter").value.trim()) return;
+  d.open ? openGroups.add(d.dataset.g) : openGroups.delete(d.dataset.g);
+}, true);
+$("filter").addEventListener("input", renderBrowse);
 $("chips").addEventListener("click", e => { const b = e.target.closest("[data-rm]"); if (b) removeAt(+b.dataset.rm); });
 $("quick").addEventListener("click", e => { const b = e.target.closest("[data-quick]"); if (b) addOrg(DB.find(o => o.name === b.dataset.quick)); });
 $("suggest").addEventListener("click", e => {
@@ -3124,7 +3278,7 @@ $("nameInput").addEventListener("input", () => {
   showSuggest(q ? findMatches(q).filter(o => !isIn(o)) : [], q);
 });
 $("nameInput").addEventListener("keydown", e => { if (e.key === "Enter") tryAdd(); if (e.key === "Escape") hideSuggest(); });
-$("presets").innerHTML = PRESETS.map(([t, l], i) => `<button data-preset="${i}">${esc(t)}<small>${l.length} ชนิด</small></button>`).join("");
+$("presets").innerHTML = PRESETS.slice(0, 1).map(([t, l], i) => `<button data-preset="${i}">${esc(t)}<small>${l.length} ชนิด</small></button>`).join("");
 $("presets").addEventListener("click", e => {
   const b = e.target.closest("[data-preset]");
   if (!b) return;
@@ -3133,7 +3287,11 @@ $("presets").addEventListener("click", e => {
 });
 $("clearBtn").onclick = () => { selected = []; renderAll(); };
 $("saveCustom").onclick = saveCustom;
-$("qrTop").onclick = () => { $("qrTitle").textContent = "สแกน แล้วเลือกชุดที่ครูบอก"; const l = location.href.split("#")[0] + "#student"; $("qrBig").innerHTML = qrSvg(l); $("qrModal").classList.add("show"); };
+$("cls").addEventListener("change", () => {
+  $("plantBox").style.display = $("cls").value === "plant" ? "block" : "none";
+  $("insectBox").style.display = $("cls").value === "insect" ? "block" : "none";
+});
+$("qrTop").onclick = () => { $("qrTitle").textContent = "สแกนเพื่อเปิดแอป"; const l = location.href.split("#")[0]; $("qrBig").innerHTML = qrSvg(l); $("qrModal").classList.add("show"); };
 $("qrClose").onclick = () => $("qrModal").classList.remove("show");
 $("qrModal").addEventListener("click", e => { if (e.target.id === "qrModal") $("qrModal").classList.remove("show"); });
 $("cancelCustom").onclick = () => $("modal").classList.remove("show");
@@ -3152,7 +3310,8 @@ function enterStudent() {
   document.title = "ไดโคโตมัสคีย์ สำหรับนักเรียน";
 }
 function route() {
-  const h = location.hash.slice(1);
+  const h = "";
+  builder = false; document.body.classList.remove("builder");
   if (h === "student") {
     enterStudent(); fixedStudent = true; selected = [];
     studentPicker();
@@ -3173,8 +3332,8 @@ function route() {
   }
   studentMode = false;
   document.body.classList.remove("student");
-  $("sub").textContent = "เพิ่มสิ่งมีชีวิต แล้วคีย์จะสร้างให้เอง ใช้สอน ทำใบงาน หรือเล่นเป็นแบบทดสอบได้";
-  document.title = "ไดโคโตมัสคีย์ สำหรับครู";
+  $("sub").textContent = "เดินสำรวจ เห็นสิ่งมีชีวิตอะไร แตะเลือกจากรายการ แล้วคีย์จะสร้างให้เอง";
+  document.title = "กุญแจวิเศษไดโคโตมัสคีย์";
   selected = []; load();
   if (document.documentElement.classList.contains("big")) $("bigBtn").textContent = "ปิดโหมดฉายจอ";
   renderAll();
